@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import Link from "next/link";
 export default async function page() {
   const user = await getCurrentUser();
   const existingUser = await prisma.user.findUnique({
@@ -15,5 +16,27 @@ export default async function page() {
     },
   });
   console.log(allUserMatches);
-  return <div>matches</div>;
+  return (
+    <div className="flex flex-col justify-center items-center">
+      Your Matches {allUserMatches.length}
+      {allUserMatches.length > 0 &&
+        allUserMatches.map((item) => {
+          const matchId = item.user1Id === user.id ? 2 : 1;
+          const key = `user${matchId}`;
+          return (
+            <Link
+              key={item.id}
+              className="border-black border-1"
+              href={`/chat/${item[key].id}`}
+            >
+              name:{item[key].username}
+              <br />
+              age:{item[key].age}
+              <br />
+              gender: {item[key].gender}
+            </Link>
+          );
+        })}
+    </div>
+  );
 }
