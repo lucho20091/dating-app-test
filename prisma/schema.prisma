@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id String @id @default(cuid())
+  userId String // stack userId
+  name String
+  sku String? @unique
+  price Decimal @db.Decimal(12,2)
+  quantity Int @default(0)
+  lowStockAt Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([userId,name])
+  @@index([createdAt])
+}
+
+model User {
+  id String @id @default(cuid())
+  username String @unique
+  gender String @default("male")
+  age Int @default(18)
+  bio String
+  avatar_url String
+  preferences String @default("female")
+  is_online Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  likesSent    Like[]   @relation("LikesSent")     // users this user has liked
+  likesReceived Like[]  @relation("LikesReceived") 
+
+    matchesAsUser1 Match[] @relation("User1Matches")
+  matchesAsUser2 Match[] @relation("User2Matches")
+}
+
+model Like {
+  id           String   @id @default(cuid())
+  created_at   DateTime @default(now())
+  fromUserId   String
+  toUserId     String
+  fromUser     User     @relation("LikesSent", fields: [fromUserId], references: [id])
+  toUser       User     @relation("LikesReceived", fields: [toUserId], references: [id])
+
+  @@unique([fromUserId, toUserId]) 
+  @@index([toUserId])              
+}
+
+
+model Match {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+
+  user1Id     String
+  user2Id     String
+
+  user1       User     @relation("User1Matches", fields: [user1Id], references: [id])
+  user2       User     @relation("User2Matches", fields: [user2Id], references: [id])
+
+  @@unique([user1Id, user2Id]) // Prevent duplicate matches
+  @@index([user1Id])
+  @@index([user2Id])
+}
